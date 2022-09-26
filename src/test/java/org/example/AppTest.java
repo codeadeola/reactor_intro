@@ -60,7 +60,6 @@ public class AppTest
     void publishStreamOfValues(){
         Flux uuid  = Flux.fromStream(Stream.generate(UUID::randomUUID).limit (20));
         uuid.log().subscribe(e -> System.out.printf("subs:: %s%n", e));
-
     }
 
     //simultaneous broadcast
@@ -71,6 +70,23 @@ public class AppTest
         concurrentPub.log().subscribe(e -> System.out.printf("first:: %s%n", e));
         concurrentPub.log().subscribe(e -> System.out.printf("second:: %s%n", e));
 
+        concurrentPub.connect();
+    }
+
+    @Test
+    void multipleSubscribersWithHandlers(){
+        ConnectableFlux concurrentPub = Flux.fromStream(Stream.generate(() -> UUID.randomUUID()).limit (5)).publish();
+
+        concurrentPub.log().subscribe(e -> System.out.printf("first:: %s%n", e), error ->  System.out.println("received an error::" + error));
+        concurrentPub.log().subscribe(e -> System.out.printf("second:: %s%n", e));
+
+        concurrentPub.connect();
+    }
+
+    @Test
+    void multipleSubscribersWithErrorHandlers(){
+        ConnectableFlux concurrentPub = Flux.fromStream(Stream.generate(() -> 5 /0 ).limit (5)).publish();
+        concurrentPub.log().subscribe(e -> System.out.printf("first:: %s%n", e), error ->  System.out.println("received an error::" + error), () -> System.out.println(" *** received on complete event ***"));
         concurrentPub.connect();
     }
 }
